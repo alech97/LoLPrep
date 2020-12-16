@@ -1,0 +1,4 @@
+# Hide unwanted folders
+.vscode/
+__pycache__
+output

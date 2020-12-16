@@ -1,181 +1,107 @@
 #!/usr/bin/env python
 
+import os
+import sys
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from collections import Counter
+from tkinter import Tk, Button, Entry, Label, LEFT, RIGHT, font, Frame
+from selenium.webdriver.chrome.service import Service as ChromeService
+from subprocess import CREATE_NO_WINDOW
 
-link = 'https://www.metasrc.com/5v5/champion/{}/support?ranks=platinum,diamond,master,grandmaster,challenger'
+from driver import HiddenChromeWebDriver
 
-mobile_emulation = {
-    "deviceMetrics": {"width": 500, "height": 700, "pixelRatio": 3.0},
-    "userAgent": "Mozilla/5.0 (Linux; Android 4.2.1; en-us; Nexus 5 Build/JOP40D) AppleWebKit/535.19 (KHTML, like Gecko) Chrome/18.0.1025.166 Mobile Safari/535.19"}
-chrome_options = Options()
-chrome_options.add_experimental_option("mobileEmulation", mobile_emulation)
-chrome_options.add_argument("window-size=200,850")
+LINK = 'https://www.metasrc.com/5v5/champion/{}/support?ranks=platinum,diamond,master,grandmaster,challenger'
 
-champs = [
-    "aatrox",
-    "ahri",
-    "akali",
-    "alistar",
-    "amumu",
-    "anivia",
-    "annie",
-    "aphelios",
-    "ashe",
-    "aurelionsol",
-    "azir",
-    "bard",
-    "blitzcrank",
-    "brand",
-    "braum",
-    "caitlyn",
-    "camille",
-    "cassiopeia",
-    "chogath",
-    "corki",
-    "darius",
-    "diana",
-    "drmundo",
-    "draven",
-    "ekko",
-    "elise",
-    "evelynn",
-    "ezreal",
-    "fiddlesticks",
-    "fiora",
-    "fizz",
-    "galio",
-    "gangplank",
-    "garen",
-    "gnar",
-    "gragas",
-    "graves",
-    "hecarim",
-    "heimerdinger",
-    "illaoi",
-    "irelia",
-    "ivern",
-    "janna",
-    "jarvaniv",
-    "jax",
-    "jayce",
-    "jhin",
-    "jinx",
-    "kaisa",
-    "kalista",
-    "karma",
-    "karthus",
-    "kassadin",
-    "katarina",
-    "kayle",
-    "kayn",
-    "kennen",
-    "khazix",
-    "kindred",
-    "kled",
-    "kogmaw",
-    "leblanc",
-    "leesin",
-    "leona",
-    "lillia",
-    "lissandra",
-    "lucian",
-    "lulu",
-    "lux",
-    "malphite",
-    "malzahar",
-    "maokai",
-    "masteryi",
-    "missfortune",
-    "mordekaiser",
-    "morgana",
-    "nami",
-    "nasus",
-    "nautilus",
-    "neeko",
-    "nidalee",
-    "nocturne",
-    "nunuwillump",
-    "olaf",
-    "orianna",
-    "ornn",
-    "pantheon",
-    "poppy",
-    "pyke",
-    "qiyana",
-    "quinn",
-    "rakan",
-    "rammus",
-    "reksai",
-    "renekton",
-    "rengar",
-    "riven",
-    "rumble",
-    "ryze",
-    "samira",
-    "sejuani",
-    "senna",
-    "seraphine",
-    "sett",
-    "shaco",
-    "shen",
-    "shyvana",
-    "singed",
-    "sion",
-    "sivir",
-    "skarner",
-    "sona",
-    "soraka",
-    "swain",
-    "sylas",
-    "syndra",
-    "tahmkench",
-    "talon",
-    "taric",
-    "teemo",
-    "thresh",
-    "tristana",
-    "trundle",
-    "tryndamere",
-    "twistedfate",
-    "twitch",
-    "udyr",
-    "urgot",
-    "varus",
-    "vayne",
-    "veigar",
-    "velkoz",
-    "vi",
-    "viktor",
-    "vladimir",
-    "volibear",
-    "warwick",
-    "wukong",
-    "xayah",
-    "xerath",
-    "xinzhao",
-    "yasuo",
-    "yone",
-    "yorick",
-    "yuumi",
-    "zac",
-    "zed",
-    "ziggs",
-    "zilean",
-    "zoe",
-    "zyra"
-]
+def resource_path(relative_path):
+    try:
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.dirname(__file__)
+    return os.path.join(base_path, relative_path)
+
+with open(resource_path('champions.txt')) as f:
+    champs = f.read().splitlines()
+
+class ChoiceWindow(Tk):
+    def __init__(self, width=300, height=100):
+        super(ChoiceWindow, self).__init__()
+
+        self.button_font = font.Font(family='calibri', size=15, weight="bold")
+        
+        self.title("LoL Prep")
+        self.minsize(width, height)
+
+        self.button1 = Button(
+            self, text="Summoner's Rift", command=self.set_rift, height=4, width=15, 
+            bg='#535bfa', fg='white', font=self.button_font, 
+            activebackground='#676ae6'
+        )
+        self.button2 = Button(
+            self, text='ARAM', command=self.set_aram, height=4, width=15, 
+            bg='#24639f', fg='white', font=self.button_font, 
+            activebackground='#2c5c54'
+        )
+
+        self.button1.pack(side=LEFT)
+        self.button2.pack(side=RIGHT)
+    
+    def clear(self):
+        self.button1.destroy()
+        self.button2.destroy()
+    
+    def set_aram(self):
+        self.state = 'aram'
+        self.clear()
+        self.ask_champion()
+    
+    def set_rift(self):
+        self.state = 'rift'
+        self.clear()
+        self.ask_champion()
+    
+    def ask_champion(self):
+        frame = Frame(self, bg='purple', height=300, width=100)
+        frame.pack(side='top', fill='both', expand=True)
+        Label(frame, text='What champion are you playing?', font=self.button_font, fg='black', bg='purple').pack()
+        self.champ_entry = Entry(frame, text='champion')
+        self.champ_entry.focus()
+        self.bind('<Return>', self.swap_to_browser)
+        self.champ_entry.pack()
+    
+    def swap_to_browser(self, *args):
+        entry_text = self.champ_entry.get()
+        self.destroy()
+        open_champ(entry_text)
 
 def open_browser(champ):
     """Opens a given link with a given clean champion stream"""
+    mobile_emulation = {
+        "deviceMetrics": {
+            "width": 500, "height": 700, "pixelRatio": 3.0
+        },
+        "userAgent": "Mozilla/5.0 (Linux; Android 4.2.1; en-us; Nexus 5 Build/JOP40D) AppleWebKit/535.19 " +\
+            "(KHTML, like Gecko) Chrome/18.0.1025.166 Mobile Safari/535.19"
+    }
+    chrome_options = Options()
+    chrome_options.add_experimental_option("mobileEmulation", mobile_emulation)
+    chrome_options.add_experimental_option("excludeSwitches", ['enable-automation', 'enable-logging'])
+    chrome_options.add_argument('log-level=2')
+    chrome_options.add_argument("window-size=200,785")
+
     global browser
-    browser = webdriver.Chrome('./chromedriver', options=chrome_options)
-    # browser.set_window_size(200, 850)
-    browser.get(link.format(champ))
+
+    browser = HiddenChromeWebDriver(resource_path('./driver/chromedriver.exe'), options=chrome_options)
+    browser.get(LINK.format(champ))
 
     page_script = """
     document.getElementsByClassName('cc-window').forEach((e) => e.remove());
+    document.getElementsByClassName('zaf-sticky-bottom-center').forEach((e) => e.remove());
+    $('._yq1p7n').css('background-color', '#00a5bb80');
+    $('.container').css('background-color', '#131313');
+    $('body').css('background-color', '#131313');
+
+    
     document.getElementById('navbar').remove();
     document.getElementById('leaderboard').remove();
     document.getElementById('metasrc_horizontal_adhesion').remove();
@@ -206,14 +132,10 @@ def open_browser(champ):
     """
     browser.execute_script(page_script)
 
-
-def clean_str(s: str):
-    """Clean a given string to be lowercase and without special characters"""
-    return ''.join([c.lower() for c in s if c.isalnum()])
-
-
 def choose_champ(query: str):
     """Choose the champion closest to the given input"""
+    #Clean query of special characters
+    query = ''.join([c.lower() for c in query if c.isalnum()])
     input_ = Counter(query)
     min_diff, min_champ = float('inf'), None
 
@@ -221,25 +143,29 @@ def choose_champ(query: str):
     for champ in champs:
         counter = Counter(champ)
 
+        #Minus 1 point for each letter within champ name found within the query
         champ_diff = sum((input_ - counter).values())
+        #Minus 0.1 points * length of intersecting substrings (to break ties)
+        #Ex: "fid" should mean "Fiddlesticks", not "Twisted Fate"
+        for a, b in zip(query, champ):
+            if a == b:
+                champ_diff -= 0.1
+            else:
+                break
 
         if champ_diff < min_diff:
-            min_diff = champ_diff
-            min_champ = champ
-        elif champ_diff == min_diff and query in champ:
             min_diff = champ_diff
             min_champ = champ
 
     return min_champ
 
-
-def main():
-    input_ = clean_str(input("What champion are you playing? <3\n"))
-
-    min_champ = choose_champ(input_)
-
+def open_champ(query: str):
+    min_champ = choose_champ(query)
     open_browser(min_champ)
 
-
+def main():
+    choice_window = ChoiceWindow()
+    choice_window.mainloop()
+ 
 if __name__ == '__main__':
     main()

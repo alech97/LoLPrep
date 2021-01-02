@@ -11,7 +11,7 @@ from subprocess import CREATE_NO_WINDOW
 
 from driver import HiddenChromeWebDriver
 
-LINK = 'https://www.metasrc.com/5v5/champion/{}/support?ranks=platinum,diamond,master,grandmaster,challenger'
+LINK = 'https://www.metasrc.com/{}/champion/{}/support?ranks=platinum,diamond,master,grandmaster,challenger'
 
 def resource_path(relative_path):
     try:
@@ -56,7 +56,7 @@ class ChoiceWindow(Tk):
         self.ask_champion()
     
     def set_rift(self):
-        self.state = 'rift'
+        self.state = '5v5'
         self.clear()
         self.ask_champion()
     
@@ -70,11 +70,11 @@ class ChoiceWindow(Tk):
         self.champ_entry.pack()
     
     def swap_to_browser(self, *args):
-        entry_text = self.champ_entry.get()
+        champ = choose_champ(self.champ_entry.get())
         self.destroy()
-        open_champ(entry_text)
+        open_browser(self.state, champ)
 
-def open_browser(champ):
+def open_browser(map_type, champ):
     """Opens a given link with a given clean champion stream"""
     mobile_emulation = {
         "deviceMetrics": {
@@ -92,9 +92,10 @@ def open_browser(champ):
     global browser
 
     browser = HiddenChromeWebDriver(resource_path('./driver/chromedriver.exe'), options=chrome_options)
-    browser.get(LINK.format(champ))
+    browser.get(LINK.format(map_type, champ))
 
-    page_script = """
+    page_script = f"document.title = '{map_type.upper()} - {champ.title()}';"
+    page_script += """
     document.getElementsByClassName('cc-window').forEach((e) => e.remove());
     document.getElementsByClassName('zaf-sticky-bottom-center').forEach((e) => e.remove());
     $('._yq1p7n').css('background-color', '#00a5bb80');
@@ -158,10 +159,6 @@ def choose_champ(query: str):
             min_champ = champ
 
     return min_champ
-
-def open_champ(query: str):
-    min_champ = choose_champ(query)
-    open_browser(min_champ)
 
 def main():
     choice_window = ChoiceWindow()

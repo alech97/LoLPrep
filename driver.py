@@ -87,7 +87,7 @@ class HiddenChromeWebDriver(webdriver.WebDriver):
                 desired_capabilities = options.to_capabilities()
             else:
                 desired_capabilities.update(options.to_capabilities())
-
+                
         self.service = HiddenChromeService(
             executable_path,
             port=port,

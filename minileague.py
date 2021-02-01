@@ -86,6 +86,7 @@ def open_browser(map_type, champ):
     chrome_options = Options()
     chrome_options.add_experimental_option("mobileEmulation", mobile_emulation)
     chrome_options.add_experimental_option("excludeSwitches", ['enable-automation', 'enable-logging'])
+    chrome_options.add_argument('--no-proxy-server')
     chrome_options.add_argument('log-level=2')
     chrome_options.add_argument("window-size=200,785")
 

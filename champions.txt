@@ -115,6 +115,7 @@ swain
 sylas
 syndra
 tahmkench
+taliyah
 talon
 taric
 teemo
@@ -131,6 +132,7 @@ vayne
 veigar
 velkoz
 vi
+viego
 viktor
 vladimir
 volibear
